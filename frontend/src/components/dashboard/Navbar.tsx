@@ -19,6 +19,7 @@ import {
   Bot,
   Home,
   Grid,
+  Plus,
 } from 'lucide-react';
 import { User } from '@/types';
 import { useAuth } from '@/context/AuthContext';
