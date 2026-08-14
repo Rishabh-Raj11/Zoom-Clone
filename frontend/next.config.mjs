@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false, // Disable double invocation for WebSockets/WebRTC connections in dev
+  reactStrictMode: false, // Disable double invocation for WebSockets/WebRTC connections
   images: {
     remotePatterns: [
       {
@@ -8,14 +8,6 @@ const nextConfig = {
         hostname: 'images.unsplash.com',
       },
     ],
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://localhost:5000/api/:path*',
-      },
-    ];
   },
 };
 

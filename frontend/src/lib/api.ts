@@ -1,6 +1,11 @@
 import { Meeting, User, Recording } from '@/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://zoom-backend-rishabh.loca.lt/api';
+
+const DEFAULT_HEADERS: Record<string, string> = {
+  'Content-Type': 'application/json',
+  'bypass-tunnel-reminder': 'true',
+};
 
 /**
  * Authentication APIs
@@ -9,7 +14,7 @@ export async function signupUser(name: string, email: string, password: string):
   try {
     const res = await fetch(`${API_BASE}/auth/signup`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify({ name, email, password }),
     });
     const data = await res.json();
@@ -23,7 +28,7 @@ export async function loginUser(email: string, password: string): Promise<{ succ
   try {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify({ email, password }),
     });
     const data = await res.json();
@@ -35,7 +40,7 @@ export async function loginUser(email: string, password: string): Promise<{ succ
 
 export async function fetchAuthUser(token?: string): Promise<User | null> {
   try {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { ...DEFAULT_HEADERS };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -67,7 +72,7 @@ export async function fetchUserActivity(): Promise<{
 } | null> {
   try {
     const token = typeof window !== 'undefined' ? localStorage.getItem('zoom_auth_token') : null;
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { ...DEFAULT_HEADERS };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -83,7 +88,7 @@ export async function fetchUserActivity(): Promise<{
 export async function fetchMeetings(status?: 'upcoming' | 'ended'): Promise<Meeting[]> {
   try {
     const url = status ? `${API_BASE}/meetings?status=${status}` : `${API_BASE}/meetings`;
-    const res = await fetch(url, { cache: 'no-store' });
+    const res = await fetch(url, { headers: DEFAULT_HEADERS, cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch meetings');
     const data = await res.json();
     return data.data || [];
@@ -95,7 +100,10 @@ export async function fetchMeetings(status?: 'upcoming' | 'ended'): Promise<Meet
 
 export async function fetchMeetingById(identifier: string): Promise<Meeting | null> {
   try {
-    const res = await fetch(`${API_BASE}/meetings/${encodeURIComponent(identifier)}`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE}/meetings/${encodeURIComponent(identifier)}`, {
+      headers: DEFAULT_HEADERS,
+      cache: 'no-store',
+    });
     if (!res.ok) return null;
     const data = await res.json();
     return data.data || null;
@@ -125,7 +133,7 @@ export async function createInstantMeeting(options?: {
 }): Promise<Meeting> {
   const res = await fetch(`${API_BASE}/meetings/instant`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: DEFAULT_HEADERS,
     body: JSON.stringify(options || {}),
   });
   if (!res.ok) throw new Error('Failed to create instant meeting');
@@ -146,7 +154,7 @@ export async function scheduleMeeting(payload: {
 }): Promise<Meeting> {
   const res = await fetch(`${API_BASE}/meetings/schedule`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: DEFAULT_HEADERS,
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -161,6 +169,7 @@ export async function endMeeting(id: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/meetings/${id}/end`, {
       method: 'POST',
+      headers: DEFAULT_HEADERS,
     });
     return res.ok;
   } catch (err) {
@@ -172,6 +181,7 @@ export async function deleteMeeting(id: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/meetings/${id}`, {
       method: 'DELETE',
+      headers: DEFAULT_HEADERS,
     });
     return res.ok;
   } catch (err) {
@@ -181,7 +191,7 @@ export async function deleteMeeting(id: string): Promise<boolean> {
 
 export async function fetchCurrentUser(): Promise<User> {
   try {
-    const res = await fetch(`${API_BASE}/auth/me`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE}/auth/me`, { headers: DEFAULT_HEADERS, cache: 'no-store' });
     if (!res.ok) throw new Error('User not found');
     const data = await res.json();
     return data.user || data.data;
@@ -199,7 +209,7 @@ export async function fetchCurrentUser(): Promise<User> {
 
 export async function fetchRecordings(): Promise<Recording[]> {
   try {
-    const res = await fetch(`${API_BASE}/recordings`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE}/recordings`, { headers: DEFAULT_HEADERS, cache: 'no-store' });
     if (!res.ok) return [];
     const data = await res.json();
     return data.data || [];
@@ -223,7 +233,7 @@ export async function testOpenAIKey(apiKey: string): Promise<{ success: boolean;
   try {
     const res = await fetch(`${API_BASE}/ai/test-key`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify({ apiKey }),
     });
     const data = await res.json();
@@ -248,12 +258,12 @@ export async function queryAICompanion(payload: AICompanionPayload): Promise<{
   try {
     const res = await fetch(`${API_BASE}/ai/companion`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: DEFAULT_HEADERS,
       body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error('AI query failed');
     const data = await res.json();
-    return data.data;
+    return data.data || data;
   } catch (err: any) {
     console.error('queryAICompanion error:', err);
     return {
