@@ -202,7 +202,7 @@ export function ChatSidebar({
         ) : (
           messages.map((msg) => {
             const isMe = msg.senderId === currentUserId;
-            const isDirect = Boolean(msg.targetId);
+            const isDirect = Boolean(msg.targetId || msg.recipientId || msg.isDirect);
 
             return (
               <div
@@ -266,7 +266,7 @@ export function ChatSidebar({
                     boxShadow: 'var(--shadow-sm)',
                   }}
                 >
-                  {msg.content}
+                  {msg.content || msg.message}
                 </div>
               </div>
             );

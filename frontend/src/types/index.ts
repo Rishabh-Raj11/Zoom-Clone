@@ -52,10 +52,12 @@ export interface ChatMessage {
   meeting_id?: string;
   senderId: string;
   senderName: string;
-  message: string;
+  message?: string;
+  content?: string;
   timestamp: string;
-  isDirect: boolean;
+  isDirect?: boolean;
   recipientId?: string;
+  targetId?: string;
 }
 
 export interface Recording {
