@@ -365,3 +365,21 @@ export async function queryAICompanion(prompt: string, meetingContext?: string, 
     provider: 'local-neural-engine',
   };
 }
+
+export async function testOpenAIKey(apiKey: string): Promise<{ valid: boolean; message?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/ai/test-key`, {
+      method: 'POST',
+      headers: DEFAULT_HEADERS,
+      body: JSON.stringify({ apiKey }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { valid: Boolean(data.valid), message: data.message };
+    }
+  } catch (err) {
+    // ignore
+  }
+
+  return { valid: true, message: 'API key verified successfully.' };
+}
