@@ -16,53 +16,7 @@ export function useMediaStream(initialVideo = true, initialAudio = true) {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  // Initialize Camera & Mic
-  const initMedia = useCallback(async () => {
-    try {
-      setIsInitializing(true);
-      setPermissionError(null);
-
-      // Check if mediaDevices is supported
-      if (!navigator?.mediaDevices?.getUserMedia) {
-        console.warn('getUserMedia not supported in this environment');
-        setIsInitializing(false);
-        return null;
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: 'user',
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-
-      // Apply initial mute/video settings
-      stream.getVideoTracks().forEach((t) => (t.enabled = initialVideo));
-      stream.getAudioTracks().forEach((t) => (t.enabled = initialAudio));
-
-      setLocalStream(stream);
-      setIsVideoEnabled(initialVideo);
-      setIsAudioEnabled(initialAudio);
-
-      // Setup audio analyzer for volume meter
-      setupAudioMeter(stream);
-
-      setIsInitializing(false);
-      return stream;
-    } catch (err: any) {
-      console.warn('Media access warning/error:', err.name || err.message);
-      setPermissionError(err.name || 'Could not access camera/microphone');
-      setIsInitializing(false);
-      return null;
-    }
-  }, [initialVideo, initialAudio]);
-
+  // Setup Audio Meter
   const setupAudioMeter = (stream: MediaStream) => {
     try {
       const audioTracks = stream.getAudioTracks();
@@ -70,6 +24,10 @@ export function useMediaStream(initialVideo = true, initialAudio = true) {
 
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtx) return;
+
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {});
+      }
 
       const ctx = new AudioCtx();
       const analyser = ctx.createAnalyser();
@@ -99,32 +57,159 @@ export function useMediaStream(initialVideo = true, initialAudio = true) {
 
       updateMeter();
     } catch (e) {
-      console.error('Audio meter setup error:', e);
+      console.warn('Audio meter setup warning:', e);
     }
   };
 
-  // Toggle Video
-  const toggleVideo = useCallback(() => {
-    if (!localStream) return;
+  // Initialize Camera & Mic with layered fallbacks for Laptops & Mobile
+  const initMedia = useCallback(async () => {
+    setIsInitializing(true);
+    setPermissionError(null);
+
+    if (typeof window === 'undefined' || !navigator?.mediaDevices?.getUserMedia) {
+      console.warn('getUserMedia not supported in this environment');
+      setIsInitializing(false);
+      return null;
+    }
+
+    let stream: MediaStream | null = null;
+
+    // Strategy 1: Attempt both Audio and Video together
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user',
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+    } catch (err1: any) {
+      console.warn('[MediaStream] Full media acquisition failed, trying audio only fallback...', err1);
+
+      // Strategy 2: Attempt Audio only (e.g. laptop camera blocked or in use)
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+      } catch (err2: any) {
+        console.warn('[MediaStream] Audio only acquisition failed, trying video only...', err2);
+
+        // Strategy 3: Attempt Video only
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              facingMode: 'user',
+            },
+          });
+        } catch (err3: any) {
+          console.warn('[MediaStream] Video only acquisition failed:', err3);
+          setPermissionError('Could not access camera or microphone');
+          stream = new MediaStream();
+        }
+      }
+    }
+
+    if (!stream) {
+      stream = new MediaStream();
+    }
+
+    // Configure tracks based on initial flags
+    stream.getVideoTracks().forEach((t) => (t.enabled = initialVideo));
+    stream.getAudioTracks().forEach((t) => (t.enabled = initialAudio));
+
+    setLocalStream(stream);
+    setIsVideoEnabled(initialVideo && stream.getVideoTracks().length > 0);
+    setIsAudioEnabled(initialAudio && stream.getAudioTracks().length > 0);
+
+    if (stream.getAudioTracks().length > 0) {
+      setupAudioMeter(stream);
+    }
+
+    setIsInitializing(false);
+    return stream;
+  }, [initialVideo, initialAudio]);
+
+  // Toggle Video (with on-demand camera acquisition if tracks don't exist)
+  const toggleVideo = useCallback(async () => {
+    if (!localStream) {
+      setIsVideoEnabled((prev) => !prev);
+      return;
+    }
+
     const videoTracks = localStream.getVideoTracks();
     if (videoTracks.length > 0) {
       const newState = !videoTracks[0].enabled;
       videoTracks.forEach((track) => (track.enabled = newState));
       setIsVideoEnabled(newState);
-    } else if (!isVideoEnabled) {
-      // If no track existed, re-request
-      initMedia();
+    } else {
+      // Laptop camera track was not acquired yet -> Request camera actively
+      try {
+        const vStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user',
+          },
+        });
+        const newTrack = vStream.getVideoTracks()[0];
+        if (newTrack) {
+          newTrack.enabled = true;
+          localStream.addTrack(newTrack);
+          setLocalStream(new MediaStream(localStream.getTracks()));
+          setIsVideoEnabled(true);
+        }
+      } catch (err) {
+        console.warn('Could not acquire camera on toggle:', err);
+        setIsVideoEnabled((prev) => !prev);
+      }
     }
-  }, [localStream, isVideoEnabled, initMedia]);
+  }, [localStream]);
 
-  // Toggle Audio
-  const toggleAudio = useCallback(() => {
-    if (!localStream) return;
+  // Toggle Audio (with on-demand microphone acquisition if tracks don't exist)
+  const toggleAudio = useCallback(async () => {
+    if (!localStream) {
+      setIsAudioEnabled((prev) => !prev);
+      return;
+    }
+
     const audioTracks = localStream.getAudioTracks();
     if (audioTracks.length > 0) {
       const newState = !audioTracks[0].enabled;
       audioTracks.forEach((track) => (track.enabled = newState));
       setIsAudioEnabled(newState);
+    } else {
+      // Laptop mic track was not acquired yet -> Request mic actively
+      try {
+        const aStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+        const newTrack = aStream.getAudioTracks()[0];
+        if (newTrack) {
+          newTrack.enabled = true;
+          localStream.addTrack(newTrack);
+          setLocalStream(new MediaStream(localStream.getTracks()));
+          setIsAudioEnabled(true);
+          setupAudioMeter(localStream);
+        }
+      } catch (err) {
+        console.warn('Could not acquire microphone on toggle:', err);
+        setIsAudioEnabled((prev) => !prev);
+      }
     }
   }, [localStream]);
 
@@ -142,14 +227,22 @@ export function useMediaStream(initialVideo = true, initialAudio = true) {
           alert('Screen sharing is not supported in this browser.');
           return null;
         }
+
         const displayMediaOptions: any = {
-          video: { cursor: 'always' },
+          video: {
+            cursor: 'always',
+            frameRate: { ideal: 60, max: 60 },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
           audio: false,
         };
+
         const sStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
 
         // Listen for browser's native "Stop Sharing" bar click
         sStream.getVideoTracks()[0].onended = () => {
+          sStream.getTracks().forEach((t) => t.stop());
           setScreenStream(null);
           setIsScreenSharing(false);
         };
@@ -172,7 +265,7 @@ export function useMediaStream(initialVideo = true, initialAudio = true) {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close();
+        audioContextRef.current.close().catch(() => {});
       }
       if (localStream) {
         localStream.getTracks().forEach((t) => t.stop());

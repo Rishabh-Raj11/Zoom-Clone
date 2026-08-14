@@ -26,12 +26,14 @@ export function ParticipantTile({
   // Bind video stream
   useEffect(() => {
     if (videoRef.current && participant.stream) {
-      videoRef.current.srcObject = participant.stream;
+      if (videoRef.current.srcObject !== participant.stream) {
+        videoRef.current.srcObject = participant.stream;
+      }
       videoRef.current.play().catch((err) => {
-        console.warn('[Video] Auto-play prevented:', err);
+        console.warn('[Video] Auto-play note:', err);
       });
     }
-  }, [participant.stream, participant.isVideoOff]);
+  }, [participant.stream, participant.isVideoOff, participant.isSharing]);
 
   // Bind separate audio stream (guarantees remote audio plays even if video is off or minimized)
   useEffect(() => {
