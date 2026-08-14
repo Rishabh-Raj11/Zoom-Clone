@@ -345,12 +345,20 @@ export async function fetchRecordings(): Promise<Recording[]> {
   ];
 }
 
-export async function queryAICompanion(prompt: string, meetingContext?: string, customApiKey?: string): Promise<{ reply: string; provider?: string }> {
+export async function queryAICompanion(
+  input: string | { prompt: string; userName?: string; meetingTitle?: string; contextType?: string; apiKey?: string; model?: string },
+  meetingContext?: string,
+  customApiKey?: string
+): Promise<{ reply: string; provider?: string }> {
+  const promptText = typeof input === 'string' ? input : input.prompt;
+  const key = typeof input === 'string' ? customApiKey : (input.apiKey || customApiKey);
+  const context = typeof input === 'string' ? meetingContext : (input.meetingTitle || input.contextType);
+
   try {
     const res = await fetch(`${API_BASE}/ai/companion`, {
       method: 'POST',
       headers: DEFAULT_HEADERS,
-      body: JSON.stringify({ prompt, meetingContext, customApiKey }),
+      body: JSON.stringify({ prompt: promptText, meetingContext: context, customApiKey: key }),
     });
     if (res.ok) {
       const data = await res.json();
