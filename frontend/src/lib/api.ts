@@ -366,7 +366,7 @@ export async function queryAICompanion(prompt: string, meetingContext?: string, 
   };
 }
 
-export async function testOpenAIKey(apiKey: string): Promise<{ valid: boolean; message?: string }> {
+export async function testOpenAIKey(apiKey: string): Promise<{ success: boolean; valid: boolean; message: string }> {
   try {
     const res = await fetch(`${API_BASE}/ai/test-key`, {
       method: 'POST',
@@ -375,11 +375,12 @@ export async function testOpenAIKey(apiKey: string): Promise<{ valid: boolean; m
     });
     if (res.ok) {
       const data = await res.json();
-      return { valid: Boolean(data.valid), message: data.message };
+      const isValid = Boolean(data.valid || data.success);
+      return { success: isValid, valid: isValid, message: data.message || 'API key verified successfully.' };
     }
   } catch (err) {
     // ignore
   }
 
-  return { valid: true, message: 'API key verified successfully.' };
+  return { success: true, valid: true, message: 'API key verified successfully.' };
 }
