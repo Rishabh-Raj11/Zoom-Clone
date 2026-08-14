@@ -208,21 +208,28 @@ export function useWebRTC({
   useEffect(() => {
     const videoTrack = activeVideoStream?.getVideoTracks()[0];
     if (!videoTrack) return;
+    videoTrack.enabled = true;
 
-    peerConnections.current.forEach((pc) => {
+    peerConnections.current.forEach((pc, peerId) => {
       const senders = pc.getSenders();
-      const videoSender = senders.find((s) => s.track?.kind === 'video');
+      const videoSender = senders.find((s) => s.track?.kind === 'video' || s.track === null);
       if (videoSender) {
-        videoSender.replaceTrack(videoTrack).catch((e) => console.warn('[WebRTC] replaceTrack error:', e));
+        videoSender.replaceTrack(videoTrack).then(() => {
+          console.log(`[WebRTC] Successfully replaced video track for peer ${peerId}`);
+        }).catch((e) => {
+          console.warn('[WebRTC] replaceTrack error, attempting renegotiation:', e);
+          initiateOffer(peerId);
+        });
       } else if (activeVideoStream) {
         try {
           pc.addTrack(videoTrack, activeVideoStream);
+          initiateOffer(peerId);
         } catch (e) {
           console.warn('[WebRTC] addTrack error:', e);
         }
       }
     });
-  }, [activeVideoStream, isScreenSharing, screenStream, localStream]);
+  }, [activeVideoStream, isScreenSharing, screenStream, localStream, initiateOffer]);
 
   // Update Audio Track if mic state changes
   useEffect(() => {
