@@ -41,7 +41,8 @@ export function useWebSocket({ roomId, userId, userName, role = 'participant', o
     // Support NEXT_PUBLIC_WS_URL directly, or compute with ws:// in dev and wss:// in prod
     const defaultHost = typeof window !== 'undefined' ? `${window.location.hostname}:5000` : 'localhost:5000';
     const wsProtocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || `${wsProtocol}//${process.env.NEXT_PUBLIC_WS_HOST || defaultHost}/ws`;
+    const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || (isProduction ? 'wss://zoom-clone-l5ro.onrender.com/ws' : `${wsProtocol}//${process.env.NEXT_PUBLIC_WS_HOST || defaultHost}/ws`);
 
     console.log(`[WebSocket] Connecting to: ${wsUrl}`);
     const ws = new WebSocket(wsUrl);

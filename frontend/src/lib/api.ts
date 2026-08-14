@@ -1,6 +1,6 @@
 import { Meeting, User, Recording } from '@/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://zoom-backend-rishabh.loca.lt/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://zoom-clone-l5ro.onrender.com/api';
 
 const DEFAULT_HEADERS: Record<string, string> = {
   'Content-Type': 'application/json',
