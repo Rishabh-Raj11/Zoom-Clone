@@ -31,6 +31,7 @@ import { LeaveModal } from '@/components/meeting/LeaveModal';
 import { PollsModal } from '@/components/meeting/PollsModal';
 import { NetworkHealthModal } from '@/components/meeting/NetworkHealthModal';
 import { LiveCaptionsBar } from '@/components/meeting/LiveCaptionsBar';
+import { InviteModal } from '@/components/meeting/InviteModal';
 import { Participant, ChatMessage, LayoutMode, WhiteboardPoint, Poll } from '@/types';
 import { formatMeetingId, copyToClipboard } from '@/lib/utils';
 import { fetchMeetingById } from '@/lib/api';
@@ -54,6 +55,7 @@ export default function MeetingRoomPage({ params }: { params: { id: string } }) 
   const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isInfoPopoverOpen, setIsInfoPopoverOpen] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isPollsOpen, setIsPollsOpen] = useState(false);
   const [isHealthOpen, setIsHealthOpen] = useState(false);
   const [isCaptionsActive, setIsCaptionsActive] = useState(false);
@@ -714,6 +716,7 @@ export default function MeetingRoomPage({ params }: { params: { id: string } }) 
           onMuteAll={handleMuteAll}
           onMuteUser={handleMuteUser}
           onKickUser={handleKickUser}
+          onOpenInvite={() => setIsInviteOpen(true)}
         />
 
         {/* Security Menu Popover */}
@@ -794,6 +797,15 @@ export default function MeetingRoomPage({ params }: { params: { id: string } }) 
           } catch (e) {}
           router.push('/');
         }}
+      />
+
+      {/* Direct Code & Link Invite Modal */}
+      <InviteModal
+        isOpen={isInviteOpen}
+        onClose={() => setIsInviteOpen(false)}
+        meetingId={meetingId}
+        meetingTitle={meetingDetails?.title}
+        passcode={meetingDetails?.passcode}
       />
     </div>
   );

@@ -30,6 +30,7 @@ interface ParticipantsSidebarProps {
   onMuteAll: () => void;
   onMuteUser: (userId: string) => void;
   onKickUser: (userId: string) => void;
+  onOpenInvite?: () => void;
 }
 
 export function ParticipantsSidebar({
@@ -43,6 +44,7 @@ export function ParticipantsSidebar({
   onMuteAll,
   onMuteUser,
   onKickUser,
+  onOpenInvite,
 }: ParticipantsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedInvite, setCopiedInvite] = useState(false);
@@ -55,6 +57,10 @@ export function ParticipantsSidebar({
   );
 
   const handleCopyInvite = async () => {
+    if (onOpenInvite) {
+      onOpenInvite();
+      return;
+    }
     const inviteUrl = `${window.location.origin}/join/${meetingId.replace(/\s/g, '')}`;
     const text = `Join Zoom Meeting:\n${inviteUrl}\n\nMeeting ID: ${meetingId}${passcode ? `\nPasscode: ${passcode}` : ''}`;
     await copyToClipboard(text);

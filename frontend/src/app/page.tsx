@@ -142,7 +142,13 @@ export default function DashboardPage() {
         user={currentUser}
         onOpenSettings={() => setIsSettingsOpen(true)}
         activeNavTab={navTab}
-        onSelectNavTab={(tab) => setNavTab(tab)}
+        onSelectNavTab={(tab) => {
+          if (tab === 'join') {
+            setIsJoinModalOpen(true);
+          } else {
+            setNavTab(tab);
+          }
+        }}
       />
 
       {/* Main Container */}

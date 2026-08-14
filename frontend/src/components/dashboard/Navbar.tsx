@@ -56,6 +56,7 @@ export function Navbar({ user, onOpenSettings, activeNavTab = 'home', onSelectNa
 
   const navItems = [
     { key: 'home', label: 'Home', icon: Home },
+    { key: 'join', label: 'Join', icon: Plus, isAction: true },
     { key: 'chat', label: 'Team Chat', icon: MessageSquare },
     { key: 'meetings', label: 'Meetings', icon: Calendar },
     { key: 'whiteboards', label: 'Whiteboard', icon: PenTool },

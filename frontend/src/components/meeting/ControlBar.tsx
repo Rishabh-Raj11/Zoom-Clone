@@ -417,6 +417,71 @@ export function ControlBar({
           <span style={{ fontSize: '10px', marginTop: '3px', fontWeight: '600' }}>Chat</span>
         </button>
 
+        {/* Mobile React Button */}
+        {isMobile && (
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setReactionsOpen(!reactionsOpen)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px 8px',
+                height: '50px',
+                borderRadius: '8px',
+                color: reactionsOpen ? '#0E71EB' : '#FFFFFF',
+                backgroundColor: reactionsOpen ? 'rgba(255,255,255,0.08)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <Smile size={20} />
+              <span style={{ fontSize: '10px', marginTop: '3px', fontWeight: '600' }}>React</span>
+            </button>
+
+            {reactionsOpen && (
+              <div
+                className="glass-panel-heavy animate-fade-in"
+                style={{
+                  position: 'fixed',
+                  bottom: '72px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  padding: '8px 12px',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  gap: '8px',
+                  boxShadow: 'var(--shadow-lg)',
+                  border: '1px solid var(--border-medium)',
+                  zIndex: 80,
+                  backgroundColor: 'rgba(19, 24, 36, 0.95)',
+                }}
+              >
+                {REACTION_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => {
+                      onSendReaction(emoji);
+                      setReactionsOpen(false);
+                    }}
+                    style={{
+                      fontSize: '24px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '4px 6px',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Share Screen (Desktop or Tablet) */}
         {!isMobile && (
           <button
