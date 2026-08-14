@@ -53,7 +53,7 @@ export function setupWebSocket(server: Server) {
             }
 
             const room = rooms.get(cleanRoomId)!;
-            const role = payload?.role || (room.size === 0 ? 'host' : 'participant');
+            const role: 'host' | 'co-host' | 'participant' = room.size === 0 ? 'host' : 'participant';
             const userName = senderName || (role === 'host' ? 'Host User' : `Guest-${senderId.slice(-4)}`);
 
             currentConnection = {
