@@ -42,8 +42,8 @@ export default function MeetingRoomPage({ params }: { params: { id: string } }) 
 
   // Local User State
   const [userId] = useState(() => `usr_${Math.random().toString(36).substring(2, 9)}`);
-  const [displayName, setDisplayName] = useState('Alex Morgan');
-  const [role, setRole] = useState<'host' | 'co-host' | 'participant'>('host');
+  const [displayName, setDisplayName] = useState('Rishabh');
+  const [role, setRole] = useState<'host' | 'co-host' | 'participant'>('participant');
   const [meetingDetails, setMeetingDetails] = useState<any>(null);
 
   // UI State
@@ -303,9 +303,11 @@ export default function MeetingRoomPage({ params }: { params: { id: string } }) 
     onMessage: handleWebSocketMessage,
   });
 
-  // Initialize WebRTC Peer Mesh
+  // Initialize WebRTC Peer Mesh with Screen Share Support
   const { remoteStreams, initiateOffer, handleOffer, handleAnswer, handleIceCandidate, removePeer } = useWebRTC({
     localStream,
+    screenStream,
+    isScreenSharing,
     userId,
     sendMessage,
   });

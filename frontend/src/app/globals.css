@@ -294,3 +294,51 @@ input::placeholder, textarea::placeholder {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* -------------------------------------------------------------
+   UNIVERSAL DEVICE RESPONSIVENESS (MOBILE, TABLET, DESKTOP)
+---------------------------------------------------------------- */
+
+/* Dynamic viewport height support (no mobile URL bar jump) */
+.full-screen-container {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+/* Mobile Portrait Specific Overrides (< 768px) */
+@media (max-width: 768px) {
+  :root {
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+  }
+
+  body {
+    font-size: 14px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Safe Area support for mobile notches & bottom home bar */
+  .safe-bottom {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .safe-top {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+
+  /* Mobile Grid for Action Cards */
+  .mobile-action-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* Mobile Meeting Top Bar */
+  .mobile-meeting-header {
+    height: 46px !important;
+    padding: 0 12px !important;
+  }
+}
+
