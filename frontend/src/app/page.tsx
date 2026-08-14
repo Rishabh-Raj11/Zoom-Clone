@@ -144,7 +144,7 @@ export default function DashboardPage() {
         activeNavTab={navTab}
         onSelectNavTab={(tab) => {
           if (tab === 'join') {
-            setIsJoinModalOpen(true);
+            setIsJoinOpen(true);
           } else {
             setNavTab(tab);
           }
