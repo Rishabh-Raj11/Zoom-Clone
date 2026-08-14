@@ -147,24 +147,20 @@ let recordings: Recording[] = [
   {
     id: 'rec_1',
     meeting_id: '632 990 1284',
-    title: 'Executive Leadership All-Hands',
+    meeting_title: 'Executive Leadership All-Hands',
     duration_seconds: 3000,
-    file_size_bytes: 471859200,
-    file_url: 'https://assets.mixkit.co/videos/preview/mixkit-business-partners-having-an-online-meeting-42861-large.mp4',
-    thumbnail_url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&auto=format&fit=crop&q=80',
-    recorded_at: new Date(now.getTime() - 26 * 3600 * 1000).toISOString(),
-    summary: 'Discussion covered Q3 revenue growth exceeding targets by 18%, new enterprise tier rollouts, and expansion into EMEA and APAC markets.'
+    file_size_mb: 450,
+    video_url: 'https://assets.mixkit.co/videos/preview/mixkit-business-partners-having-an-online-meeting-42861-large.mp4',
+    created_at: new Date(now.getTime() - 26 * 3600 * 1000).toISOString(),
   },
   {
     id: 'rec_2',
     meeting_id: '419 883 5521',
-    title: 'Frontend Performance & WebRTC Optimization',
+    meeting_title: 'Frontend Performance & WebRTC Optimization',
     duration_seconds: 2400,
-    file_size_bytes: 335544320,
-    file_url: 'https://assets.mixkit.co/videos/preview/mixkit-group-of-people-working-at-a-conference-table-41618-large.mp4',
-    thumbnail_url: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=600&auto=format&fit=crop&q=80',
-    recorded_at: new Date(now.getTime() - 50 * 3600 * 1000).toISOString(),
-    summary: 'Team resolved peer connection renegotiation latency by 45%, finalized SDP bundling, and tested automated fallback for low-bandwidth scenarios.'
+    file_size_mb: 320,
+    video_url: 'https://assets.mixkit.co/videos/preview/mixkit-group-of-people-working-at-a-conference-table-41618-large.mp4',
+    created_at: new Date(now.getTime() - 50 * 3600 * 1000).toISOString(),
   }
 ];
 
