@@ -1,4 +1,20 @@
-# 🎥 Video Conferencing Platform (Zoom Clone)
+# 🎥 Zoom Workplace Clone - Real-Time Video Conferencing Platform
+
+[![Live App on Vercel](https://img.shields.io/badge/Live%20Demo-Vercel%20Production-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://zoom-workplace-rishabh.vercel.app)
+[![Backend API on Render](https://img.shields.io/badge/Backend%20API-Render%20Cloud-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://zoom-clone-l5ro.onrender.com)
+[![WebSocket Server](https://img.shields.io/badge/WebSocket-wss%3A%2F%2Fzoom--clone--l5ro.onrender.com-0E71EB?style=for-the-badge&logo=socket.io&logoColor=white)](https://zoom-clone-l5ro.onrender.com)
+
+---
+
+## 🌐 Quick Access Live Links
+
+| Service | Role | Direct URL |
+| :--- | :--- | :--- |
+| **🚀 Production Web App** | Frontend Web Application (Next.js 14, WebRTC UI) | **[https://zoom-workplace-rishabh.vercel.app](https://zoom-workplace-rishabh.vercel.app)** |
+| **⚡ Backend API & Signaling** | Node/Express Signaling Server + SQLite DB on Render | **[https://zoom-clone-l5ro.onrender.com](https://zoom-clone-l5ro.onrender.com)** |
+| **📦 GitHub Repository** | Public Source Code Repository | **[https://github.com/Rishabh-Raj11/Zoom-Clone](https://github.com/Rishabh-Raj11/Zoom-Clone)** |
+
+---
 
 A modern, production-grade video conferencing web application replicating Zoom’s user experience, design system, and core meeting workflows. Built with **Next.js (React / TypeScript)** on the frontend, **Node.js (Express / TypeScript)** on the backend, **SQLite** for relational persistence, and **WebRTC + WebSockets** for real-time video, audio, in-meeting chat, and collaborative tools.
 
