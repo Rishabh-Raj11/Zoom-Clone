@@ -35,6 +35,49 @@ export function VideoGrid({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Screen Share Presenter Spotlight Mode
+  const presenter = participants.find((p) => p.isSharing && p.stream);
+  if (presenter) {
+    const otherParticipants = participants.filter((p) => p.id !== presenter.id);
+
+    return (
+      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: '8px', padding: '8px' }}>
+        {/* Top Thumbnail Strip */}
+        <div
+          style={{
+            height: isMobilePortrait ? '80px' : '110px',
+            display: 'flex',
+            gap: '8px',
+            overflowX: 'auto',
+            paddingBottom: '4px',
+          }}
+        >
+          {otherParticipants.map((p) => (
+            <div key={p.id} style={{ width: isMobilePortrait ? '110px' : '160px', height: '100%', flexShrink: 0 }}>
+              <ParticipantTile
+                participant={p}
+                onMuteUser={onMuteUser}
+                onKickUser={onKickUser}
+                isCurrentUserHost={isCurrentUserHost}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Main Stage: Screen Share Presentation */}
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <ParticipantTile
+            participant={presenter}
+            isSpeaker={true}
+            onMuteUser={onMuteUser}
+            onKickUser={onKickUser}
+            isCurrentUserHost={isCurrentUserHost}
+          />
+        </div>
+      </div>
+    );
+  }
+
   // Speaker View Mode
   if (layoutMode === 'speaker' && count > 1 && !isSharingActive) {
     const activeSpeaker = participants.find((p) => p.id === activeSpeakerId) || participants[1] || participants[0];

@@ -90,9 +90,9 @@ export function ParticipantTile({
         style={{
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
-          display: !participant.isVideoOff && participant.stream ? 'block' : 'none',
-          transform: participant.isLocal ? 'scaleX(-1)' : 'none',
+          objectFit: participant.isSharing ? 'contain' : 'cover',
+          display: (!participant.isVideoOff || participant.isSharing) && participant.stream ? 'block' : 'none',
+          transform: participant.isLocal && !participant.isSharing ? 'scaleX(-1)' : 'none',
         }}
       />
 

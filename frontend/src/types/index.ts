@@ -41,6 +41,7 @@ export interface Participant {
   isMuted: boolean;
   isVideoOff: boolean;
   isHandRaised: boolean;
+  isSharing?: boolean;
   avatarUrl?: string;
   reaction?: string;
   isLocal?: boolean;

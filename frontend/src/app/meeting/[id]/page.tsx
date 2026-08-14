@@ -242,6 +242,10 @@ export default function MeetingRoomPage({ params }: { params: { id: string } }) 
               if (payload.isMuted !== undefined) p.isMuted = payload.isMuted;
               if (payload.isVideoOff !== undefined) p.isVideoOff = payload.isVideoOff;
               if (payload.isHandRaised !== undefined) p.isHandRaised = payload.isHandRaised;
+              if (payload.isSharing !== undefined) {
+                p.isSharing = payload.isSharing;
+                if (payload.isSharing) p.isVideoOff = false;
+              }
               next.set(senderId, { ...p });
             }
             return next;
@@ -318,8 +322,9 @@ export default function MeetingRoomPage({ params }: { params: { id: string } }) 
       isMuted: !isAudioEnabled,
       isVideoOff: !isVideoEnabled,
       isHandRaised,
+      isSharing: isScreenSharing,
     });
-  }, [isAudioEnabled, isVideoEnabled, isHandRaised, sendMessage]);
+  }, [isAudioEnabled, isVideoEnabled, isHandRaised, isScreenSharing, sendMessage]);
 
   // Handle Cloud Recording Timer & Auto Save
   const handleToggleRecord = async () => {
@@ -427,8 +432,9 @@ export default function MeetingRoomPage({ params }: { params: { id: string } }) 
     isMuted: !isAudioEnabled,
     isVideoOff: !isVideoEnabled,
     isHandRaised,
+    isSharing: false, // Prevent infinite tunnel effect on local view
     isLocal: true,
-    stream: isScreenSharing && screenStream ? screenStream : localStream || undefined,
+    stream: localStream || undefined,
   };
 
   let allParticipantsList = [
@@ -638,6 +644,49 @@ export default function MeetingRoomPage({ params }: { params: { id: string } }) 
             speakerName={activeCaption?.speakerName}
             text={activeCaption?.text}
           />
+
+          {/* Active Screen Sharing Floating Bar for Presenter */}
+          {isScreenSharing && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '16px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                backgroundColor: 'rgba(19, 24, 36, 0.95)',
+                border: '2px solid #10B981',
+                borderRadius: 'var(--radius-full)',
+                padding: '8px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                boxShadow: '0 8px 32px rgba(16, 185, 129, 0.4)',
+                zIndex: 60,
+                backdropFilter: 'blur(12px)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10B981', fontSize: '13px', fontWeight: '800' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981', animation: 'pulseGlow 1.5s infinite' }} />
+                <span>You are sharing your screen</span>
+              </div>
+              <button
+                onClick={toggleScreenShare}
+                style={{
+                  backgroundColor: '#EF4444',
+                  color: '#FFF',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '5px 14px',
+                  fontSize: '12px',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
+                }}
+              >
+                Stop Share
+              </button>
+            </div>
+          )}
 
           {/* Floating Emoji Reactions Overlay */}
           <ReactionsOverlay reactions={reactions} />
