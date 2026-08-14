@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -35,9 +35,19 @@ export function Navbar({ user, onOpenSettings, activeNavTab = 'home', onSelectNa
   const pathname = usePathname();
   const { user: authUser, logout } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const currentTab = activeNavTab || 'home';
 
   const displayUser = authUser || user;
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -48,7 +58,7 @@ export function Navbar({ user, onOpenSettings, activeNavTab = 'home', onSelectNa
     { key: 'home', label: 'Home', icon: Home },
     { key: 'chat', label: 'Team Chat', icon: MessageSquare },
     { key: 'meetings', label: 'Meetings', icon: Calendar },
-    { key: 'whiteboards', label: 'Whiteboards', icon: PenTool },
+    { key: 'whiteboards', label: 'Whiteboard', icon: PenTool },
     { key: 'clips', label: 'Clips', icon: Film },
     { key: 'ai', label: 'AI Companion', icon: Bot, isSparkle: true },
   ];
@@ -66,15 +76,16 @@ export function Navbar({ user, onOpenSettings, activeNavTab = 'home', onSelectNa
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 20px',
+        padding: isMobile ? '0 12px' : '0 20px',
         position: 'sticky',
         top: 0,
         zIndex: 50,
         userSelect: 'none',
+        gap: '12px',
       }}
     >
       {/* Left: Official Zoom Logo Branding */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '20px', overflowX: 'auto', flexShrink: 1 }}>
         <Link
           href="/"
           style={{
@@ -82,6 +93,7 @@ export function Navbar({ user, onOpenSettings, activeNavTab = 'home', onSelectNa
             alignItems: 'center',
             gap: '8px',
             textDecoration: 'none',
+            flexShrink: 0,
           }}
         >
           <div
@@ -98,26 +110,31 @@ export function Navbar({ user, onOpenSettings, activeNavTab = 'home', onSelectNa
           >
             <Video size={18} color="#FFFFFF" strokeWidth={2.4} />
           </div>
-          <span style={{ fontSize: '20px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '-0.5px' }}>
-            zoom
-          </span>
-          <span
-            style={{
-              fontSize: '10px',
-              fontWeight: '800',
-              backgroundColor: 'rgba(14, 113, 235, 0.18)',
-              color: '#2D8CFF',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              letterSpacing: '0.5px',
-            }}
-          >
-            WORKPLACE
-          </span>
+          {!isMobile && (
+            <span
+              style={{
+                fontSize: '18px',
+                fontWeight: '800',
+                color: '#FFFFFF',
+                letterSpacing: '-0.4px',
+              }}
+            >
+              zoom <span style={{ color: 'var(--zoom-blue)', fontWeight: '600' }}>Workplace</span>
+            </span>
+          )}
         </Link>
 
-        {/* Center-Left: Official Top Navigation Tabs */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '12px' }}>
+        {/* Global Navigation Tabs (Horizontal scroll on mobile) */}
+        <nav
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '2px',
+            overflowX: 'auto',
+            whiteSpace: 'nowrap',
+            paddingBottom: '2px',
+          }}
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.key;
@@ -128,88 +145,56 @@ export function Navbar({ user, onOpenSettings, activeNavTab = 'home', onSelectNa
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '7px 12px',
+                  gap: '5px',
+                  padding: isMobile ? '6px 8px' : '7px 12px',
                   borderRadius: '6px',
-                  fontSize: '13px',
+                  fontSize: isMobile ? '12px' : '13px',
                   fontWeight: isActive ? '700' : '500',
                   color: isActive ? '#FFFFFF' : '#94A3B8',
                   backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                   border: 'none',
                   cursor: 'pointer',
                   position: 'relative',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
+                  flexShrink: 0,
                 }}
               >
-                <Icon size={15} color={item.isSparkle ? '#38BDF8' : isActive ? '#0E71EB' : '#94A3B8'} />
+                <Icon size={14} color={item.isSparkle ? '#38BDF8' : isActive ? '#0E71EB' : '#94A3B8'} />
                 <span>{item.label}</span>
-                {isActive && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: '-12px',
-                      left: '12px',
-                      right: '12px',
-                      height: '2px',
-                      backgroundColor: '#0E71EB',
-                      borderRadius: '2px',
-                    }}
-                  />
-                )}
               </button>
             );
           })}
         </nav>
       </div>
 
-      {/* Center Search Bar */}
-      <div style={{ position: 'relative', width: '280px' }}>
-        <Search
-          size={14}
-          color="#64748B"
-          style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
-        />
-        <input
-          type="text"
-          placeholder="Search..."
-          style={{
-            width: '100%',
-            height: '32px',
-            paddingLeft: '34px',
-            paddingRight: '36px',
-            fontSize: '12px',
-            borderRadius: '6px',
-            backgroundColor: '#0D1117',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#FFFFFF',
-          }}
-        />
-        <span
-          style={{
-            position: 'absolute',
-            right: '8px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            fontSize: '10px',
-            fontWeight: '600',
-            color: '#64748B',
-            backgroundColor: 'rgba(255, 255, 255, 0.06)',
-            padding: '1px 5px',
-            borderRadius: '4px',
-          }}
-        >
-          Ctrl+F
-        </span>
-      </div>
+      {/* Center Search Bar (Desktop only) */}
+      {!isMobile && (
+        <div style={{ position: 'relative', width: '240px', flexShrink: 0 }}>
+          <Search
+            size={14}
+            color="#64748B"
+            style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+          />
+          <input
+            type="text"
+            placeholder="Search meetings..."
+            style={{
+              width: '100%',
+              height: '32px',
+              paddingLeft: '34px',
+              paddingRight: '12px',
+              fontSize: '12px',
+              borderRadius: '6px',
+              backgroundColor: '#0D1117',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: '#FFFFFF',
+              outline: 'none',
+            }}
+          />
+        </div>
+      )}
 
       {/* Right: Settings & User Profile */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
         <button
           onClick={onOpenSettings}
           title="Settings"
@@ -221,23 +206,15 @@ export function Navbar({ user, onOpenSettings, activeNavTab = 'home', onSelectNa
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: 'transparent',
-            color: '#94A3B8',
             border: 'none',
+            color: '#94A3B8',
             cursor: 'pointer',
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-            e.currentTarget.style.color = '#FFF';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = '#94A3B8';
-          }}
         >
-          <Settings size={17} />
+          <Settings size={18} />
         </button>
 
-        {/* User Avatar Circle with Online Presence Indicator */}
+        {/* User Profile Popover */}
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setProfileOpen(!profileOpen)}
@@ -248,111 +225,76 @@ export function Navbar({ user, onOpenSettings, activeNavTab = 'home', onSelectNa
               backgroundColor: 'transparent',
               border: 'none',
               cursor: 'pointer',
-              padding: '2px',
+              padding: '2px 4px',
+              borderRadius: '6px',
             }}
           >
-            <div style={{ position: 'relative' }}>
-              <img
-                src={displayUser.avatar_url}
-                alt={displayUser.name}
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  border: '1.5px solid #0E71EB',
-                }}
-              />
-              <span
-                style={{
-                  position: 'absolute',
-                  bottom: '0',
-                  right: '0',
-                  width: '9px',
-                  height: '9px',
-                  borderRadius: '50%',
-                  backgroundColor: '#10B981',
-                  border: '2px solid #161922',
-                }}
-              />
+            <div
+              style={{
+                width: '30px',
+                height: '30px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--zoom-blue)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '13px',
+                fontWeight: '800',
+                color: '#FFF',
+              }}
+            >
+              {displayUser.name.charAt(0).toUpperCase()}
             </div>
-            <ChevronDown size={13} color="#94A3B8" />
+            <ChevronDown size={12} color="#94A3B8" />
           </button>
 
-          {/* Profile Popover */}
           {profileOpen && (
-            <>
-              <div
-                style={{ position: 'fixed', inset: 0, zIndex: 55 }}
-                onClick={() => setProfileOpen(false)}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '42px',
-                  width: '260px',
-                  backgroundColor: '#1A1E29',
-                  borderRadius: '12px',
-                  padding: '12px',
-                  boxShadow: '0 12px 36px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.2)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  zIndex: 60,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                }}
-              >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 4px 10px 4px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                <img
-                  src={displayUser.avatar_url}
-                  alt={displayUser.name}
-                  style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
-                />
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#FFF' }}>{displayUser.name}</div>
-                  <div style={{ fontSize: '12px', color: '#94A3B8' }}>{displayUser.email}</div>
-                  <span
-                    style={{
-                      fontSize: '10px',
-                      color: '#0E71EB',
-                      backgroundColor: 'rgba(14, 113, 235, 0.15)',
-                      padding: '1px 6px',
-                      borderRadius: '4px',
-                      fontWeight: '700',
-                      display: 'inline-block',
-                      marginTop: '4px',
-                    }}
-                  >
-                    LICENSED
+            <div
+              className="glass-panel-heavy animate-fade-in"
+              style={{
+                position: 'absolute',
+                top: '40px',
+                right: 0,
+                width: '240px',
+                borderRadius: 'var(--radius-lg)',
+                padding: '16px',
+                boxShadow: 'var(--shadow-lg)',
+                border: '1px solid var(--border-medium)',
+                zIndex: 60,
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '14px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '800', color: '#FFF' }}>{displayUser.name}</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{displayUser.email}</span>
+                {displayUser.pmi && (
+                  <span style={{ fontSize: '11px', color: 'var(--zoom-blue)', fontWeight: '600', marginTop: '2px' }}>
+                    PMI: {displayUser.pmi}
                   </span>
-                </div>
+                )}
               </div>
 
-              <div style={{ padding: '6px 4px', fontSize: '12px', color: '#94A3B8' }}>
-                <div>Personal Meeting ID (PMI):</div>
-                <strong style={{ color: '#FFF', fontSize: '13px', letterSpacing: '0.5px' }}>
-                  {displayUser.pmi || '942 581 4920'}
-                </strong>
-              </div>
+              <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '8px 0' }} />
 
               <button
-                onClick={onOpenSettings}
+                onClick={() => {
+                  setProfileOpen(false);
+                  onOpenSettings();
+                }}
                 style={{
+                  width: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
                   padding: '8px 10px',
-                  fontSize: '13px',
-                  color: '#FFF',
-                  backgroundColor: 'transparent',
+                  borderRadius: 'var(--radius-xs)',
                   border: 'none',
-                  borderRadius: '6px',
+                  backgroundColor: 'transparent',
+                  color: '#FFF',
+                  fontSize: '13px',
+                  fontWeight: '600',
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <Settings size={15} /> Settings
               </button>
@@ -360,25 +302,25 @@ export function Navbar({ user, onOpenSettings, activeNavTab = 'home', onSelectNa
               <button
                 onClick={handleLogout}
                 style={{
+                  width: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
                   padding: '8px 10px',
-                  fontSize: '13px',
-                  color: '#EF4444',
-                  backgroundColor: 'transparent',
+                  borderRadius: 'var(--radius-xs)',
                   border: 'none',
-                  borderRadius: '6px',
+                  backgroundColor: 'transparent',
+                  color: '#EF4444',
+                  fontSize: '13px',
+                  fontWeight: '600',
                   cursor: 'pointer',
                   textAlign: 'left',
+                  marginTop: '4px',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <LogOut size={15} /> Sign Out
               </button>
             </div>
-            </>
           )}
         </div>
       </div>

@@ -24,9 +24,19 @@ export function ChatSidebar({
 }: ChatSidebarProps) {
   const [inputText, setInputText] = useState('');
   const [recipientId, setRecipientId] = useState<string>('everyone');
+  const [isMobile, setIsMobile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const quickEmojis = ['👍', '👏', '❤️', '🎉', '🔥', '🚀'];
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -52,25 +62,29 @@ export function ChatSidebar({
     <div
       className="glass-panel-heavy animate-fade-in"
       style={{
-        width: '360px',
+        position: isMobile ? 'fixed' : 'relative',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: isMobile ? 0 : 'auto',
+        width: isMobile ? '100vw' : '360px',
+        height: '100%',
+        backgroundColor: '#111520',
         borderLeft: '1px solid var(--border-medium)',
-        borderTop: 'none',
-        borderBottom: 'none',
-        borderRight: 'none',
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
-        zIndex: 45,
+        zIndex: 75,
       }}
     >
       {/* Header */}
       <div
         style={{
-          padding: '18px 22px',
+          padding: '16px 20px',
           borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          backgroundColor: '#171D2B',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -79,8 +93,8 @@ export function ChatSidebar({
             style={{
               fontSize: '11px',
               fontWeight: '700',
-              backgroundColor: 'rgba(14, 113, 235, 0.15)',
-              color: 'var(--zoom-blue-hover)',
+              backgroundColor: 'var(--zoom-blue)',
+              color: '#FFF',
               padding: '2px 8px',
               borderRadius: 'var(--radius-full)',
             }}
@@ -88,65 +102,108 @@ export function ChatSidebar({
             Live
           </span>
         </div>
+
         <button
           onClick={onClose}
           style={{
-            width: '30px',
-            height: '30px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            background: 'none',
+            border: 'none',
             color: 'var(--text-secondary)',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            cursor: 'pointer',
+            padding: '6px',
+            borderRadius: 'var(--radius-xs)',
           }}
         >
-          <X size={16} />
+          <X size={20} />
         </button>
       </div>
 
-      {/* Messages Scroll Area */}
+      {/* Recipient Selector (Direct Message / Everyone) */}
       <div
         style={{
+          padding: '10px 16px',
+          borderBottom: '1px solid var(--border-subtle)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+        }}
+      >
+        <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>To:</span>
+        <select
+          value={recipientId}
+          onChange={(e) => setRecipientId(e.target.value)}
+          style={{
+            flex: 1,
+            backgroundColor: 'var(--bg-input)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-xs)',
+            color: '#FFFFFF',
+            padding: '6px 10px',
+            fontSize: '12px',
+            fontWeight: '600',
+            outline: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <option value="everyone">Everyone (Public in meeting)</option>
+          {participants
+            .filter((p) => p.id !== currentUserId)
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                🔒 Direct: {p.displayName} {p.role === 'host' ? '(Host)' : ''}
+              </option>
+            ))}
+        </select>
+      </div>
+
+      {/* Messages Scroll View */}
+      <div
+        className="zoom-scrollbar"
+        style={{
           flex: 1,
-          padding: '18px',
           overflowY: 'auto',
+          padding: '16px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '16px',
+          gap: '12px',
         }}
       >
         {messages.length === 0 ? (
           <div
             style={{
-              textAlign: 'center',
-              color: 'var(--text-muted)',
-              fontSize: '13px',
-              marginTop: '60px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '10px',
+              justifyContent: 'center',
+              height: '100%',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              gap: '8px',
+              padding: '20px',
             }}
           >
             <div
               style={{
-                width: '48px',
-                height: '48px',
+                width: '52px',
+                height: '52px',
                 borderRadius: '50%',
-                backgroundColor: 'rgba(14, 113, 235, 0.1)',
+                backgroundColor: 'rgba(255,255,255,0.04)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Sparkles size={22} color="var(--zoom-blue)" />
+              <Users size={24} color="var(--text-muted)" />
             </div>
-            <span>No messages yet. Send a message to start the team conversation!</span>
+            <span style={{ fontSize: '13px', fontWeight: '600', color: '#FFF' }}>No messages yet</span>
+            <span style={{ fontSize: '12px' }}>Send a message to everyone or start a private direct chat.</span>
           </div>
         ) : (
           messages.map((msg) => {
             const isMe = msg.senderId === currentUserId;
+            const isDirect = Boolean(msg.targetId);
+
             return (
               <div
                 key={msg.id}
@@ -156,53 +213,60 @@ export function ChatSidebar({
                   alignItems: isMe ? 'flex-end' : 'flex-start',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: '700',
-                      color: isMe ? 'var(--zoom-blue-hover)' : 'var(--text-primary)',
-                    }}
-                  >
-                    {isMe ? 'You' : msg.senderName}
-                  </span>
-                  {msg.isDirect && (
-                    <span
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: '700',
-                        color: '#F59E0B',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '3px',
-                        backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                        padding: '1px 6px',
-                        borderRadius: '4px',
-                      }}
-                    >
-                      <Lock size={10} /> Private
-                    </span>
-                  )}
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {formatTimeOnly(msg.timestamp)}
-                  </span>
-                </div>
-
+                {/* Sender Tag & Timestamp */}
                 <div
                   style={{
-                    background: isMe ? 'var(--zoom-blue-gradient)' : 'rgba(255, 255, 255, 0.08)',
-                    color: '#FFFFFF',
-                    padding: '10px 14px',
-                    borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                    fontSize: '13px',
-                    lineHeight: '1.45',
-                    maxWidth: '88%',
-                    wordBreak: 'break-word',
-                    boxShadow: isMe ? '0 4px 14px rgba(14, 113, 235, 0.3)' : 'var(--shadow-sm)',
-                    border: isMe ? 'none' : '1px solid var(--border-subtle)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    marginBottom: '4px',
+                    fontSize: '11px',
+                    color: 'var(--text-muted)',
                   }}
                 >
-                  {msg.message}
+                  <span style={{ fontWeight: '700', color: isMe ? 'var(--zoom-blue)' : '#FFF' }}>
+                    {isMe ? 'You' : msg.senderName}
+                  </span>
+                  {isDirect && (
+                    <span
+                      style={{
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        color: '#EF4444',
+                        padding: '1px 5px',
+                        borderRadius: '4px',
+                        fontWeight: '800',
+                        fontSize: '9px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '2px',
+                      }}
+                    >
+                      <Lock size={9} /> Direct
+                    </span>
+                  )}
+                  <span>{formatTimeOnly(msg.timestamp)}</span>
+                </div>
+
+                {/* Message Bubble */}
+                <div
+                  style={{
+                    maxWidth: '85%',
+                    padding: '10px 14px',
+                    borderRadius: '14px',
+                    backgroundColor: isMe
+                      ? 'var(--zoom-blue)'
+                      : isDirect
+                      ? 'rgba(239, 68, 68, 0.15)'
+                      : 'rgba(255, 255, 255, 0.08)',
+                    border: isDirect ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--border-subtle)',
+                    color: '#FFFFFF',
+                    fontSize: '13px',
+                    lineHeight: '1.45',
+                    wordBreak: 'break-word',
+                    boxShadow: 'var(--shadow-sm)',
+                  }}
+                >
+                  {msg.content}
                 </div>
               </div>
             );
@@ -211,101 +275,84 @@ export function ChatSidebar({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Footer / Input Area */}
+      {/* Quick Emoji Strip */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '8px 16px',
+          borderTop: '1px solid var(--border-subtle)',
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+        }}
+      >
+        {quickEmojis.map((emoji) => (
+          <button
+            key={emoji}
+            type="button"
+            onClick={() => insertEmoji(emoji)}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '18px',
+              cursor: 'pointer',
+              padding: '2px 4px',
+              borderRadius: '4px',
+              transition: 'transform 0.1s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+
+      {/* Input Box Form */}
       <form
         onSubmit={handleSubmit}
         style={{
-          padding: '14px 18px',
+          padding: '12px 16px',
           borderTop: '1px solid var(--border-subtle)',
-          backgroundColor: 'rgba(13, 17, 26, 0.95)',
           display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
+          gap: '8px',
+          backgroundColor: '#171D2B',
         }}
       >
-        {/* Quick Emoji Chips */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {quickEmojis.map((e) => (
-            <button
-              key={e}
-              type="button"
-              onClick={() => insertEmoji(e)}
-              style={{
-                fontSize: '14px',
-                padding: '3px 6px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                transition: 'all 0.1s ease',
-              }}
-              onMouseEnter={(el) => (el.currentTarget.style.transform = 'scale(1.2)')}
-              onMouseLeave={(el) => (el.currentTarget.style.transform = 'scale(1)')}
-            >
-              {e}
-            </button>
-          ))}
-        </div>
-
-        {/* Recipient Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
-          <span style={{ fontWeight: '600' }}>To:</span>
-          <select
-            value={recipientId}
-            onChange={(e) => setRecipientId(e.target.value)}
-            style={{
-              padding: '5px 10px',
-              fontSize: '12px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-subtle)',
-              color: '#FFF',
-              flex: 1,
-              fontWeight: '600',
-            }}
-          >
-            <option value="everyone">Everyone in Meeting</option>
-            {participants
-              .filter((p) => p.id !== currentUserId)
-              .map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.displayName} (Direct Message)
-                </option>
-              ))}
-          </select>
-        </div>
-
-        {/* Input & Send Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder={recipientId === 'everyone' ? 'Send a message to everyone...' : 'Send direct private message...'}
-            style={{
-              flex: 1,
-              padding: '9px 14px',
-              fontSize: '13px',
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            }}
-          />
-          <button
-            type="submit"
-            disabled={!inputText.trim()}
-            style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '50%',
-              background: inputText.trim() ? 'var(--zoom-blue-gradient)' : 'rgba(255, 255, 255, 0.08)',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: inputText.trim() ? 'var(--shadow-blue-glow)' : 'none',
-            }}
-          >
-            <Send size={16} />
-          </button>
-        </div>
+        <input
+          type="text"
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          placeholder={`Type message to ${recipientId === 'everyone' ? 'everyone' : 'direct recipient'}...`}
+          style={{
+            flex: 1,
+            backgroundColor: 'var(--bg-input)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '10px 14px',
+            color: '#FFFFFF',
+            fontSize: '13px',
+            outline: 'none',
+          }}
+        />
+        <button
+          type="submit"
+          disabled={!inputText.trim()}
+          style={{
+            backgroundColor: inputText.trim() ? 'var(--zoom-blue)' : 'rgba(255, 255, 255, 0.1)',
+            color: '#FFFFFF',
+            border: 'none',
+            borderRadius: 'var(--radius-sm)',
+            padding: '0 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: inputText.trim() ? 'pointer' : 'not-allowed',
+            transition: 'background-color 0.2s',
+          }}
+        >
+          <Send size={16} />
+        </button>
       </form>
     </div>
   );

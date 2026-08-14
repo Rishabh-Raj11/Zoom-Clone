@@ -78,7 +78,47 @@ export function Whiteboard({
 
   if (!isOpen) return null;
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const drawPoint = (x: number, y: number, isStart: boolean) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const actualColor = tool === 'eraser' ? '#171A21' : color;
+    const actualWidth = tool === 'eraser' ? 24 : tool === 'highlighter' ? 16 : lineWidth;
+    const opacity = tool === 'highlighter' ? 0.35 : 1;
+
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.strokeStyle = actualColor;
+    ctx.fillStyle = actualColor;
+    ctx.lineWidth = actualWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if (isStart || !lastPointRef.current) {
+      ctx.beginPath();
+      ctx.arc(x, y, actualWidth / 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    onBroadcastDraw({
+      x: x / canvas.width,
+      y: y / canvas.height,
+      color: actualColor,
+      size: actualWidth,
+      isDragging: !isStart,
+    });
+  };
+
+  // Mouse handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -90,80 +130,53 @@ export function Whiteboard({
     drawPoint(x, y, true);
   };
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !lastPointRef.current) return;
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
-      ctx.lineTo(x, y);
-
-      if (tool === 'eraser') {
-        ctx.strokeStyle = '#171A21';
-        ctx.lineWidth = lineWidth * 4;
-      } else if (tool === 'highlighter') {
-        ctx.strokeStyle = `${color}66`; // 40% opacity
-        ctx.lineWidth = lineWidth * 3;
-      } else {
-        ctx.strokeStyle = color;
-        ctx.lineWidth = lineWidth;
-      }
-
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.stroke();
-      ctx.restore();
-
-      // Broadcast normalized point to WebSocket
-      const prevX = lastPointRef.current ? lastPointRef.current.x / canvas.width : null;
-      const prevY = lastPointRef.current ? lastPointRef.current.y / canvas.height : null;
-
-      onBroadcastDraw({
-        x: x / canvas.width,
-        y: y / canvas.height,
-        prevX,
-        prevY,
-        color: tool === 'eraser' ? '#171A21' : color,
-        size: tool === 'eraser' ? lineWidth * 4 : lineWidth,
-        tool,
-      });
-    }
-
+    drawPoint(x, y, false);
     lastPointRef.current = { x, y };
   };
 
-  const drawPoint = (x: number, y: number, isNewStroke = false) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(x, y, (tool === 'eraser' ? lineWidth * 2 : lineWidth) / 2, 0, Math.PI * 2);
-    ctx.fillStyle = tool === 'eraser' ? '#171A21' : color;
-    ctx.fill();
-    ctx.restore();
-
-    onBroadcastDraw({
-      x: x / canvas.width,
-      y: y / canvas.height,
-      prevX: null,
-      prevY: null,
-      color: tool === 'eraser' ? '#171A21' : color,
-      size: lineWidth,
-      tool,
-    });
+  const handleMouseUp = () => {
+    setIsDrawing(false);
+    lastPointRef.current = null;
   };
 
-  const stopDrawing = () => {
+  // Touch handlers for mobile & tablet
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+
+    setIsDrawing(true);
+    lastPointRef.current = { x, y };
+    drawPoint(x, y, true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+
+    drawPoint(x, y, false);
+    lastPointRef.current = { x, y };
+  };
+
+  const handleTouchEnd = () => {
     setIsDrawing(false);
     lastPointRef.current = null;
   };
@@ -175,162 +188,203 @@ export function Whiteboard({
     if (ctx) {
       ctx.fillStyle = '#171A21';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      onBroadcastClear();
     }
+    onBroadcastClear();
   };
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const link = document.createElement('a');
-    link.download = `zoom-whiteboard-${Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    const image = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = image;
+    a.download = `zoom-whiteboard-${Date.now()}.png`;
+    a.click();
   };
 
   return (
     <div
       style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#171A21',
+        position: 'absolute',
+        inset: 0,
+        backgroundColor: '#10141E',
+        zIndex: 60,
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: 'var(--radius-lg)',
-        overflow: 'hidden',
       }}
     >
-      {/* Whiteboard Floating Toolbar */}
+      {/* Top Floating Whiteboard Toolbar */}
       <div
         className="glass-panel"
         style={{
-          position: 'absolute',
-          top: '16px',
-          left: '50%',
-          transform: 'translateX(-50%)',
+          margin: '12px 16px',
           padding: '8px 16px',
-          borderRadius: 'var(--radius-full)',
+          borderRadius: 'var(--radius-lg)',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
           gap: '12px',
-          zIndex: 20,
-          boxShadow: 'var(--shadow-md)',
+          zIndex: 70,
         }}
       >
-        {/* Pen */}
-        <button
-          onClick={() => setTool('pen')}
-          style={{
-            padding: '6px 10px',
-            borderRadius: 'var(--radius-full)',
-            backgroundColor: tool === 'pen' ? 'var(--zoom-blue)' : 'transparent',
-            color: tool === 'pen' ? '#FFF' : 'var(--text-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '12px',
-          }}
-        >
-          <Pen size={14} /> Pen
-        </button>
-
-        {/* Highlighter */}
-        <button
-          onClick={() => setTool('highlighter')}
-          style={{
-            padding: '6px 10px',
-            borderRadius: 'var(--radius-full)',
-            backgroundColor: tool === 'highlighter' ? 'var(--zoom-blue)' : 'transparent',
-            color: tool === 'highlighter' ? '#FFF' : 'var(--text-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '12px',
-          }}
-        >
-          <Highlighter size={14} /> Highlight
-        </button>
-
-        {/* Eraser */}
-        <button
-          onClick={() => setTool('eraser')}
-          style={{
-            padding: '6px 10px',
-            borderRadius: 'var(--radius-full)',
-            backgroundColor: tool === 'eraser' ? 'var(--zoom-blue)' : 'transparent',
-            color: tool === 'eraser' ? '#FFF' : 'var(--text-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '12px',
-          }}
-        >
-          <Eraser size={14} /> Eraser
-        </button>
-
-        <div style={{ width: '1px', height: '18px', backgroundColor: 'var(--border-subtle)' }} />
+        {/* Tools (Pen, Highlighter, Eraser) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button
+            onClick={() => setTool('pen')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-sm)',
+              border: 'none',
+              backgroundColor: tool === 'pen' ? 'var(--zoom-blue)' : 'rgba(255,255,255,0.06)',
+              color: '#FFF',
+              fontSize: '12px',
+              fontWeight: '700',
+              cursor: 'pointer',
+            }}
+          >
+            <Pen size={14} /> Pen
+          </button>
+          <button
+            onClick={() => setTool('highlighter')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-sm)',
+              border: 'none',
+              backgroundColor: tool === 'highlighter' ? 'var(--zoom-blue)' : 'rgba(255,255,255,0.06)',
+              color: '#FFF',
+              fontSize: '12px',
+              fontWeight: '700',
+              cursor: 'pointer',
+            }}
+          >
+            <Highlighter size={14} /> Highlight
+          </button>
+          <button
+            onClick={() => setTool('eraser')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-sm)',
+              border: 'none',
+              backgroundColor: tool === 'eraser' ? 'var(--zoom-blue)' : 'rgba(255,255,255,0.06)',
+              color: '#FFF',
+              fontSize: '12px',
+              fontWeight: '700',
+              cursor: 'pointer',
+            }}
+          >
+            <Eraser size={14} /> Eraser
+          </button>
+        </div>
 
         {/* Color Palette */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {COLORS.map((c) => (
             <button
               key={c}
-              onClick={() => setColor(c)}
+              onClick={() => {
+                setColor(c);
+                if (tool === 'eraser') setTool('pen');
+              }}
               style={{
-                width: '18px',
-                height: '18px',
+                width: '22px',
+                height: '22px',
                 borderRadius: '50%',
                 backgroundColor: c,
-                border: color === c ? '2px solid #FFF' : '1px solid rgba(255,255,255,0.2)',
-                transform: color === c ? 'scale(1.2)' : 'scale(1)',
-                transition: 'transform 0.1s ease',
+                border: color === c ? '2px solid #FFFFFF' : '1px solid rgba(255,255,255,0.2)',
+                cursor: 'pointer',
+                boxShadow: color === c ? '0 0 8px #FFF' : 'none',
               }}
             />
           ))}
         </div>
 
-        <div style={{ width: '1px', height: '18px', backgroundColor: 'var(--border-subtle)' }} />
+        {/* Actions (Clear, Download, Close) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={handleClear}
+            title="Clear canvas"
+            style={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              color: '#EF4444',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '12px',
+              fontWeight: '700',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+            }}
+          >
+            <Trash2 size={14} /> Clear
+          </button>
 
-        {/* Clear & Save Actions */}
-        <button
-          onClick={handleClear}
-          title="Clear Whiteboard"
-          style={{ color: 'var(--zoom-red)', padding: '6px' }}
-        >
-          <Trash2 size={16} />
-        </button>
+          <button
+            onClick={handleDownload}
+            title="Save PNG"
+            style={{
+              background: 'rgba(255, 255, 255, 0.08)',
+              color: '#FFF',
+              border: '1px solid var(--border-subtle)',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '12px',
+              fontWeight: '700',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+            }}
+          >
+            <Download size={14} /> Save
+          </button>
 
-        <button
-          onClick={handleDownload}
-          title="Download Snapshot"
-          style={{ color: 'var(--text-primary)', padding: '6px' }}
-        >
-          <Download size={16} />
-        </button>
-
-        <button
-          onClick={onClose}
-          title="Close Whiteboard"
-          style={{ color: 'var(--text-secondary)', padding: '6px' }}
-        >
-          <X size={16} />
-        </button>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: 'none',
+              color: '#FFF',
+              padding: '6px',
+              borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
       </div>
 
-      {/* Canvas Element */}
-      <canvas
-        ref={canvasRef}
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-        style={{
-          width: '100%',
-          height: '100%',
-          cursor: tool === 'eraser' ? 'crosshair' : 'default',
-        }}
-      />
+      {/* Canvas Area */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        <canvas
+          ref={canvasRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          style={{
+            width: '100%',
+            height: '100%',
+            cursor: tool === 'eraser' ? 'crosshair' : 'pointer',
+            touchAction: 'none',
+          }}
+        />
+      </div>
     </div>
   );
 }

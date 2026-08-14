@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Participant, LayoutMode } from '@/types';
 import { ParticipantTile } from './ParticipantTile';
 
@@ -24,6 +24,16 @@ export function VideoGrid({
   isCurrentUserHost = false,
 }: VideoGridProps) {
   const count = participants.length;
+  const [isMobilePortrait, setIsMobilePortrait] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobilePortrait(window.innerWidth < 640 && window.innerHeight > window.innerWidth);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Speaker View Mode
   if (layoutMode === 'speaker' && count > 1 && !isSharingActive) {
@@ -31,19 +41,19 @@ export function VideoGrid({
     const otherParticipants = participants.filter((p) => p.id !== activeSpeaker.id);
 
     return (
-      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px' }}>
+      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: '8px', padding: '8px' }}>
         {/* Top Thumbnail Strip */}
         <div
           style={{
-            height: '110px',
+            height: isMobilePortrait ? '80px' : '110px',
             display: 'flex',
-            gap: '10px',
+            gap: '8px',
             overflowX: 'auto',
             paddingBottom: '4px',
           }}
         >
           {otherParticipants.map((p) => (
-            <div key={p.id} style={{ width: '160px', height: '100%', flexShrink: 0 }}>
+            <div key={p.id} style={{ width: isMobilePortrait ? '110px' : '160px', height: '100%', flexShrink: 0 }}>
               <ParticipantTile
                 participant={p}
                 isSpeaker={p.id === activeSpeakerId}
@@ -69,44 +79,53 @@ export function VideoGrid({
     );
   }
 
-  // Gallery View Mode (Dynamic Responsive Grid)
+  // Gallery View Mode (Adaptive Mobile & Desktop Grid)
   let gridStyle: React.CSSProperties = {
     display: 'grid',
-    gap: '12px',
+    gap: isMobilePortrait ? '8px' : '12px',
     width: '100%',
     height: '100%',
-    padding: '12px',
+    padding: isMobilePortrait ? '8px' : '12px',
   };
 
   if (count === 1) {
     gridStyle.gridTemplateColumns = '1fr';
     gridStyle.gridTemplateRows = '1fr';
   } else if (count === 2) {
-    gridStyle.gridTemplateColumns = 'repeat(2, 1fr)';
-    gridStyle.gridTemplateRows = '1fr';
+    if (isMobilePortrait) {
+      gridStyle.gridTemplateColumns = '1fr';
+      gridStyle.gridTemplateRows = 'repeat(2, 1fr)';
+    } else {
+      gridStyle.gridTemplateColumns = 'repeat(2, 1fr)';
+      gridStyle.gridTemplateRows = '1fr';
+    }
   } else if (count <= 4) {
     gridStyle.gridTemplateColumns = 'repeat(2, 1fr)';
     gridStyle.gridTemplateRows = 'repeat(2, 1fr)';
   } else if (count <= 6) {
-    gridStyle.gridTemplateColumns = 'repeat(3, 1fr)';
-    gridStyle.gridTemplateRows = 'repeat(2, 1fr)';
+    if (isMobilePortrait) {
+      gridStyle.gridTemplateColumns = 'repeat(2, 1fr)';
+      gridStyle.gridTemplateRows = 'repeat(3, 1fr)';
+    } else {
+      gridStyle.gridTemplateColumns = 'repeat(3, 1fr)';
+      gridStyle.gridTemplateRows = 'repeat(2, 1fr)';
+    }
   } else {
-    gridStyle.gridTemplateColumns = 'repeat(3, 1fr)';
-    gridStyle.gridTemplateRows = 'repeat(3, 1fr)';
+    gridStyle.gridTemplateColumns = isMobilePortrait ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)';
+    gridStyle.gridTemplateRows = isMobilePortrait ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)';
   }
 
   return (
     <div style={gridStyle}>
       {participants.map((participant) => (
-        <div key={participant.id} style={{ width: '100%', height: '100%', minHeight: 0 }}>
-          <ParticipantTile
-            participant={participant}
-            isSpeaker={participant.id === activeSpeakerId}
-            onMuteUser={onMuteUser}
-            onKickUser={onKickUser}
-            isCurrentUserHost={isCurrentUserHost}
-          />
-        </div>
+        <ParticipantTile
+          key={participant.id}
+          participant={participant}
+          isSpeaker={participant.id === activeSpeakerId}
+          onMuteUser={onMuteUser}
+          onKickUser={onKickUser}
+          isCurrentUserHost={isCurrentUserHost}
+        />
       ))}
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Mic,
   MicOff,
@@ -15,11 +15,13 @@ import {
   Smile,
   PhoneOff,
   Hand,
-  Bot,
   BarChart3,
   Subtitles,
   Activity,
   ChevronUp,
+  MoreHorizontal,
+  X,
+  Sparkles,
 } from 'lucide-react';
 import { REACTION_EMOJIS } from '@/lib/constants';
 
@@ -89,6 +91,17 @@ export function ControlBar({
   onLeaveMeeting,
 }: ControlBarProps) {
   const [reactionsOpen, setReactionsOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const formatRecTime = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -97,414 +110,64 @@ export function ControlBar({
   };
 
   return (
-    <div
-      style={{
-        height: '76px',
-        backgroundColor: '#171A21',
-        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 20px',
-        position: 'relative',
-        zIndex: 50,
-        userSelect: 'none',
-      }}
-    >
-      {/* LEFT: Mute & Video Controls with Zoom Chevron Arrows */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        {/* Mute Button with Chevron */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <button
-            onClick={onToggleAudio}
-            title={isMuted ? 'Unmute' : 'Mute'}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px 10px',
-              height: '56px',
-              borderRadius: '6px',
-              backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
-              color: isMuted ? '#EF4444' : '#FFFFFF',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={(e) => {
-              if (!isMuted) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
-            }}
-            onMouseLeave={(e) => {
-              if (!isMuted) e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            {isMuted ? <MicOff size={20} color="#EF4444" /> : <Mic size={20} color="#FFFFFF" />}
-            <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>
-              {isMuted ? 'Unmute' : 'Mute'}
-            </span>
-          </button>
-          <button
-            style={{
-              height: '56px',
-              padding: '0 4px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              color: '#94A3B8',
-              cursor: 'pointer',
-            }}
-          >
-            <ChevronUp size={12} />
-          </button>
-        </div>
-
-        {/* Video Button with Chevron */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <button
-            onClick={onToggleVideo}
-            title={isVideoOff ? 'Start Video' : 'Stop Video'}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px 10px',
-              height: '56px',
-              borderRadius: '6px',
-              backgroundColor: isVideoOff ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
-              color: isVideoOff ? '#EF4444' : '#FFFFFF',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={(e) => {
-              if (!isVideoOff) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
-            }}
-            onMouseLeave={(e) => {
-              if (!isVideoOff) e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            {isVideoOff ? <VideoOff size={20} color="#EF4444" /> : <Video size={20} color="#FFFFFF" />}
-            <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>
-              {isVideoOff ? 'Start Video' : 'Stop Video'}
-            </span>
-          </button>
-          <button
-            style={{
-              height: '56px',
-              padding: '0 4px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              color: '#94A3B8',
-              cursor: 'pointer',
-            }}
-          >
-            <ChevronUp size={12} />
-          </button>
-        </div>
-      </div>
-
-      {/* CENTER: Exact Zoom In-Meeting Collaboration Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        {/* Security */}
-        <button
-          onClick={onToggleSecurity}
+    <>
+      {/* MOBILE BOTTOM SHEET FOR SECONDARY TOOLS */}
+      {mobileMenuOpen && (
+        <div
           style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 100,
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '64px',
-            height: '56px',
-            borderRadius: '6px',
-            color: isSecurityOpen ? '#0E71EB' : '#FFFFFF',
-            backgroundColor: isSecurityOpen ? 'rgba(255,255,255,0.08)' : 'transparent',
-            border: 'none',
-            cursor: 'pointer',
+            justifyContent: 'flex-end',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-          onMouseLeave={(e) => !isSecurityOpen && (e.currentTarget.style.backgroundColor = 'transparent')}
+          onClick={() => setMobileMenuOpen(false)}
         >
-          <Shield size={19} />
-          <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>Security</span>
-        </button>
-
-        {/* Participants */}
-        <button
-          onClick={onToggleParticipants}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '74px',
-            height: '56px',
-            borderRadius: '6px',
-            color: isParticipantsOpen ? '#0E71EB' : '#FFFFFF',
-            backgroundColor: isParticipantsOpen ? 'rgba(255,255,255,0.08)' : 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            position: 'relative',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-          onMouseLeave={(e) => !isParticipantsOpen && (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          <div style={{ position: 'relative' }}>
-            <Users size={19} />
-            <span
-              style={{
-                position: 'absolute',
-                top: '-4px',
-                right: '-10px',
-                fontSize: '10px',
-                fontWeight: '800',
-                backgroundColor: '#0E71EB',
-                color: '#FFF',
-                padding: '1px 5px',
-                borderRadius: '10px',
-                lineHeight: '12px',
-              }}
-            >
-              {participantsCount}
-            </span>
-          </div>
-          <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>Participants</span>
-        </button>
-
-        {/* Chat */}
-        <button
-          onClick={onToggleChat}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '64px',
-            height: '56px',
-            borderRadius: '6px',
-            color: isChatOpen ? '#0E71EB' : '#FFFFFF',
-            backgroundColor: isChatOpen ? 'rgba(255,255,255,0.08)' : 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            position: 'relative',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-          onMouseLeave={(e) => !isChatOpen && (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          <div style={{ position: 'relative' }}>
-            <MessageSquare size={19} />
-            {unreadChatCount > 0 && !isChatOpen && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: '-4px',
-                  right: '-6px',
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: '#FF7426',
-                }}
-              />
-            )}
-          </div>
-          <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>Chat</span>
-        </button>
-
-        {/* Polls & Quizzes */}
-        <button
-          onClick={onOpenPolls}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '64px',
-            height: '56px',
-            borderRadius: '6px',
-            color: '#FFFFFF',
-            backgroundColor: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          <BarChart3 size={19} />
-          <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>Polls</span>
-        </button>
-
-        {/* Share Screen (Official Zoom Bright Green Button) */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <button
-            onClick={onToggleScreenShare}
+          <div
+            className="glass-panel-heavy"
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px 12px',
-              height: '56px',
-              borderRadius: '6px',
-              backgroundColor: isScreenSharing ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
-              color: isScreenSharing ? '#EF4444' : '#22C55E',
-              border: 'none',
-              cursor: 'pointer',
+              backgroundColor: '#131824',
+              borderTopLeftRadius: '24px',
+              borderTopRightRadius: '24px',
+              padding: '24px 20px',
+              border: '1px solid rgba(255,255,255,0.12)',
+              maxHeight: '80vh',
+              overflowY: 'auto',
             }}
-            onMouseEnter={(e) => {
-              if (!isScreenSharing) e.currentTarget.style.backgroundColor = 'rgba(34, 197, 94, 0.12)';
-            }}
-            onMouseLeave={(e) => {
-              if (!isScreenSharing) e.currentTarget.style.backgroundColor = 'transparent';
-            }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <Share2 size={20} strokeWidth={2.4} color={isScreenSharing ? '#EF4444' : '#22C55E'} />
-            <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '700' }}>
-              {isScreenSharing ? 'Stop Share' : 'Share Screen'}
-            </span>
-          </button>
-          <button
-            style={{
-              height: '56px',
-              padding: '0 2px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              color: '#22C55E',
-              cursor: 'pointer',
-            }}
-          >
-            <ChevronUp size={12} />
-          </button>
-        </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <span style={{ fontSize: '18px', fontWeight: '800', color: '#FFF' }}>Meeting Actions</span>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
+              >
+                <X size={22} />
+              </button>
+            </div>
 
-        {/* Whiteboard */}
-        <button
-          onClick={onToggleWhiteboard}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '74px',
-            height: '56px',
-            borderRadius: '6px',
-            color: isWhiteboardOpen ? '#0E71EB' : '#FFFFFF',
-            backgroundColor: isWhiteboardOpen ? 'rgba(255,255,255,0.08)' : 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-          onMouseLeave={(e) => !isWhiteboardOpen && (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          <PenTool size={19} />
-          <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>Whiteboards</span>
-        </button>
-
-        {/* Record */}
-        <button
-          onClick={onToggleRecord}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '64px',
-            height: '56px',
-            borderRadius: '6px',
-            color: isRecording ? '#EF4444' : '#FFFFFF',
-            backgroundColor: isRecording ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => !isRecording && (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-          onMouseLeave={(e) => !isRecording && (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          <Disc size={19} color={isRecording ? '#EF4444' : undefined} />
-          <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>
-            {isRecording ? formatRecTime(recordingSeconds) : 'Record'}
-          </span>
-        </button>
-
-        {/* Captions CC */}
-        <button
-          onClick={onToggleCaptions}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '64px',
-            height: '56px',
-            borderRadius: '6px',
-            color: isCaptionsActive ? '#0E71EB' : '#FFFFFF',
-            backgroundColor: isCaptionsActive ? 'rgba(14, 113, 235, 0.15)' : 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => !isCaptionsActive && (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-          onMouseLeave={(e) => !isCaptionsActive && (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          <Subtitles size={19} />
-          <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>Captions</span>
-        </button>
-
-        {/* Reactions */}
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => setReactionsOpen(!reactionsOpen)}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '68px',
-              height: '56px',
-              borderRadius: '6px',
-              color: isHandRaised ? '#F59E0B' : '#FFFFFF',
-              backgroundColor: reactionsOpen ? 'rgba(255,255,255,0.08)' : 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-            onMouseLeave={(e) => !reactionsOpen && (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            {isHandRaised ? <Hand size={19} color="#F59E0B" /> : <Smile size={19} />}
-            <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>
-              {isHandRaised ? 'Lower Hand' : 'Reactions'}
-            </span>
-          </button>
-
-          {/* Reactions Popover */}
-          {reactionsOpen && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '68px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                padding: '12px',
-                borderRadius: '12px',
-                backgroundColor: '#1E2330',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-                width: '260px',
-                zIndex: 60,
-              }}
-            >
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+            {/* Quick Emoji Reactions */}
+            <div style={{ marginBottom: '20px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase' }}>
+                Reactions
+              </span>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                 {REACTION_EMOJIS.map((emoji) => (
                   <button
                     key={emoji}
                     onClick={() => {
                       onSendReaction(emoji);
-                      setReactionsOpen(false);
+                      setMobileMenuOpen(false);
                     }}
                     style={{
                       fontSize: '24px',
-                      padding: '6px',
-                      borderRadius: '6px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      border: 'none',
+                      padding: '8px 12px',
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '12px',
                       cursor: 'pointer',
                     }}
                   >
@@ -512,107 +175,468 @@ export function ControlBar({
                   </button>
                 ))}
               </div>
+            </div>
 
+            {/* Grid of Tools */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              {/* Whiteboard */}
               <button
                 onClick={() => {
-                  onToggleHandRaise();
-                  setReactionsOpen(false);
+                  onToggleWhiteboard();
+                  setMobileMenuOpen(false);
                 }}
                 style={{
                   display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '14px',
+                  backgroundColor: isWhiteboardOpen ? 'rgba(14, 113, 235, 0.2)' : 'rgba(255,255,255,0.05)',
+                  border: isWhiteboardOpen ? '1px solid var(--zoom-blue)' : '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '16px',
+                  color: isWhiteboardOpen ? '#0E71EB' : '#FFF',
+                  gap: '8px',
+                }}
+              >
+                <PenTool size={22} />
+                <span style={{ fontSize: '12px', fontWeight: '600' }}>Whiteboard</span>
+              </button>
+
+              {/* Participants */}
+              <button
+                onClick={() => {
+                  onToggleParticipants();
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '14px',
+                  backgroundColor: isParticipantsOpen ? 'rgba(14, 113, 235, 0.2)' : 'rgba(255,255,255,0.05)',
+                  border: isParticipantsOpen ? '1px solid var(--zoom-blue)' : '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '16px',
+                  color: isParticipantsOpen ? '#0E71EB' : '#FFF',
+                  gap: '8px',
+                }}
+              >
+                <Users size={22} />
+                <span style={{ fontSize: '12px', fontWeight: '600' }}>Roster ({participantsCount})</span>
+              </button>
+
+              {/* Raise Hand */}
+              <button
+                onClick={() => {
+                  onToggleHandRaise();
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '14px',
+                  backgroundColor: isHandRaised ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255,255,255,0.05)',
+                  border: isHandRaised ? '1px solid #F59E0B' : '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '16px',
+                  color: isHandRaised ? '#F59E0B' : '#FFF',
+                  gap: '8px',
+                }}
+              >
+                <Hand size={22} />
+                <span style={{ fontSize: '12px', fontWeight: '600' }}>{isHandRaised ? 'Lower Hand' : 'Raise Hand'}</span>
+              </button>
+
+              {/* Polls */}
+              <button
+                onClick={() => {
+                  onOpenPolls();
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '14px',
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '16px',
+                  color: '#FFF',
+                  gap: '8px',
+                }}
+              >
+                <BarChart3 size={22} />
+                <span style={{ fontSize: '12px', fontWeight: '600' }}>Polls</span>
+              </button>
+
+              {/* Captions */}
+              <button
+                onClick={() => {
+                  onToggleCaptions();
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '14px',
+                  backgroundColor: isCaptionsActive ? 'rgba(14, 113, 235, 0.2)' : 'rgba(255,255,255,0.05)',
+                  border: isCaptionsActive ? '1px solid var(--zoom-blue)' : '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '16px',
+                  color: isCaptionsActive ? '#0E71EB' : '#FFF',
+                  gap: '8px',
+                }}
+              >
+                <Subtitles size={22} />
+                <span style={{ fontSize: '12px', fontWeight: '600' }}>Captions</span>
+              </button>
+
+              {/* Mock Peers Toggle */}
+              <button
+                onClick={() => {
+                  onToggleMockParticipants();
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '14px',
+                  backgroundColor: isMockActive ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255,255,255,0.05)',
+                  border: isMockActive ? '1px solid #8B5CF6' : '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '16px',
+                  color: isMockActive ? '#A78BFA' : '#FFF',
+                  gap: '8px',
+                }}
+              >
+                <Sparkles size={22} />
+                <span style={{ fontSize: '12px', fontWeight: '600' }}>AI Peers</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MAIN BOTTOM CONTROL BAR */}
+      <div
+        style={{
+          height: isMobile ? '68px' : '76px',
+          backgroundColor: '#171A21',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: isMobile ? 'space-around' : 'space-between',
+          padding: isMobile ? '0 8px' : '0 20px',
+          position: 'relative',
+          zIndex: 50,
+          userSelect: 'none',
+        }}
+      >
+        {/* Mute Button */}
+        <button
+          onClick={onToggleAudio}
+          title={isMuted ? 'Unmute' : 'Mute'}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '6px 8px',
+            height: isMobile ? '50px' : '56px',
+            borderRadius: '8px',
+            backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+            color: isMuted ? '#EF4444' : '#FFFFFF',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          {isMuted ? <MicOff size={20} color="#EF4444" /> : <Mic size={20} color="#FFFFFF" />}
+          <span style={{ fontSize: '10px', marginTop: '3px', fontWeight: '600' }}>
+            {isMuted ? 'Unmute' : 'Mute'}
+          </span>
+        </button>
+
+        {/* Video Button */}
+        <button
+          onClick={onToggleVideo}
+          title={isVideoOff ? 'Start Video' : 'Stop Video'}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '6px 8px',
+            height: isMobile ? '50px' : '56px',
+            borderRadius: '8px',
+            backgroundColor: isVideoOff ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+            color: isVideoOff ? '#EF4444' : '#FFFFFF',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          {isVideoOff ? <VideoOff size={20} color="#EF4444" /> : <Video size={20} color="#FFFFFF" />}
+          <span style={{ fontSize: '10px', marginTop: '3px', fontWeight: '600' }}>
+            {isVideoOff ? 'Start' : 'Stop'}
+          </span>
+        </button>
+
+        {/* Chat Button (With live badge) */}
+        <button
+          onClick={onToggleChat}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '6px 8px',
+            height: isMobile ? '50px' : '56px',
+            borderRadius: '8px',
+            color: isChatOpen ? '#0E71EB' : '#FFFFFF',
+            backgroundColor: isChatOpen ? 'rgba(14, 113, 235, 0.15)' : 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            position: 'relative',
+          }}
+        >
+          <MessageSquare size={20} />
+          {unreadChatCount > 0 && !isChatOpen && (
+            <span
+              style={{
+                position: 'absolute',
+                top: '4px',
+                right: '6px',
+                backgroundColor: 'var(--zoom-red)',
+                color: '#FFF',
+                fontSize: '10px',
+                fontWeight: '800',
+                padding: '2px 5px',
+                borderRadius: '10px',
+              }}
+            >
+              {unreadChatCount}
+            </span>
+          )}
+          <span style={{ fontSize: '10px', marginTop: '3px', fontWeight: '600' }}>Chat</span>
+        </button>
+
+        {/* Share Screen (Desktop or Tablet) */}
+        {!isMobile && (
+          <button
+            onClick={onToggleScreenShare}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '74px',
+              height: '56px',
+              borderRadius: '8px',
+              color: isScreenSharing ? '#10B981' : '#10B981',
+              backgroundColor: isScreenSharing ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <Share2 size={20} color="#10B981" />
+            <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '600', color: '#10B981' }}>
+              {isScreenSharing ? 'Stop Share' : 'Share'}
+            </span>
+          </button>
+        )}
+
+        {/* Desktop Only Extra Tools */}
+        {!isMobile && (
+          <>
+            {/* Whiteboard */}
+            <button
+              onClick={onToggleWhiteboard}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '64px',
+                height: '56px',
+                borderRadius: '8px',
+                color: isWhiteboardOpen ? '#0E71EB' : '#FFFFFF',
+                backgroundColor: isWhiteboardOpen ? 'rgba(255,255,255,0.08)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <PenTool size={20} />
+              <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>Whiteboard</span>
+            </button>
+
+            {/* Participants */}
+            <button
+              onClick={onToggleParticipants}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '64px',
+                height: '56px',
+                borderRadius: '8px',
+                color: isParticipantsOpen ? '#0E71EB' : '#FFFFFF',
+                backgroundColor: isParticipantsOpen ? 'rgba(255,255,255,0.08)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                position: 'relative',
+              }}
+            >
+              <Users size={20} />
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '6px',
+                  right: '12px',
+                  backgroundColor: 'rgba(255,255,255,0.15)',
+                  color: '#FFF',
+                  fontSize: '10px',
+                  fontWeight: '700',
+                  padding: '1px 5px',
+                  borderRadius: '8px',
+                }}
+              >
+                {participantsCount}
+              </span>
+              <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>Roster</span>
+            </button>
+
+            {/* Record */}
+            <button
+              onClick={onToggleRecord}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '64px',
+                height: '56px',
+                borderRadius: '8px',
+                color: isRecording ? '#EF4444' : '#FFFFFF',
+                backgroundColor: isRecording ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <Disc size={20} color={isRecording ? '#EF4444' : '#FFFFFF'} />
+              <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>
+                {isRecording ? formatRecTime(recordingSeconds) : 'Record'}
+              </span>
+            </button>
+
+            {/* Reactions Popover Trigger */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setReactionsOpen(!reactionsOpen)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '6px',
-                  backgroundColor: isHandRaised ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255, 255, 255, 0.06)',
-                  color: isHandRaised ? '#F59E0B' : '#FFFFFF',
-                  padding: '8px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  border: isHandRaised ? '1px solid #F59E0B' : '1px solid rgba(255,255,255,0.1)',
+                  width: '64px',
+                  height: '56px',
+                  borderRadius: '8px',
+                  color: reactionsOpen ? '#0E71EB' : '#FFFFFF',
+                  backgroundColor: reactionsOpen ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  border: 'none',
                   cursor: 'pointer',
                 }}
               >
-                <Hand size={14} />
-                <span>{isHandRaised ? 'Lower Hand' : 'Raise Hand'}</span>
+                <Smile size={20} />
+                <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>React</span>
               </button>
+
+              {reactionsOpen && (
+                <div
+                  className="glass-panel-heavy animate-fade-in"
+                  style={{
+                    position: 'absolute',
+                    bottom: '68px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    padding: '10px 14px',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    gap: '8px',
+                    boxShadow: 'var(--shadow-lg)',
+                    border: '1px solid var(--border-medium)',
+                    zIndex: 60,
+                  }}
+                >
+                  {REACTION_EMOJIS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        onSendReaction(emoji);
+                        setReactionsOpen(false);
+                      }}
+                      style={{
+                        fontSize: '22px',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '8px',
+                        transition: 'transform 0.15s',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.25)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
 
-        {/* Solo Testing AI Peers */}
-        <button
-          onClick={onToggleMockParticipants}
-          title="Toggle Simulated Participants"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '64px',
-            height: '56px',
-            borderRadius: '6px',
-            color: isMockActive ? '#0E71EB' : '#94A3B8',
-            backgroundColor: isMockActive ? 'rgba(14, 113, 235, 0.15)' : 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-          onMouseLeave={(e) => !isMockActive && (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          <Bot size={19} />
-          <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>AI Peers</span>
-        </button>
+        {/* Mobile "More" Menu Trigger */}
+        {isMobile && (
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '6px 8px',
+              height: '50px',
+              borderRadius: '8px',
+              color: '#FFFFFF',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <MoreHorizontal size={20} />
+            <span style={{ fontSize: '10px', marginTop: '3px', fontWeight: '600' }}>More</span>
+          </button>
+        )}
 
-        {/* Health */}
-        <button
-          onClick={onOpenHealth}
-          title="Connection Health"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '56px',
-            height: '56px',
-            borderRadius: '6px',
-            color: '#10B981',
-            backgroundColor: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          <Activity size={19} />
-          <span style={{ fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>Health</span>
-        </button>
-      </div>
-
-      {/* RIGHT: Iconic Zoom Red End / Leave Button */}
-      <div>
+        {/* End / Leave Button */}
         <button
           onClick={onLeaveMeeting}
           style={{
-            backgroundColor: '#E02828',
+            backgroundColor: '#EF4444',
             color: '#FFFFFF',
-            padding: '8px 20px',
-            borderRadius: '8px',
-            fontSize: '13px',
             fontWeight: '700',
+            fontSize: isMobile ? '12px' : '13px',
+            padding: isMobile ? '8px 14px' : '8px 20px',
+            borderRadius: '8px',
             border: 'none',
             cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            boxShadow: '0 2px 8px rgba(224, 40, 40, 0.4)',
+            boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)',
+            transition: 'all 0.2s',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#C51C1C')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#E02828')}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#DC2626')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#EF4444')}
         >
-          <span>{isHost ? 'End' : 'Leave'}</span>
+          {isHost ? (isMobile ? 'End' : 'End Meeting') : 'Leave'}
         </button>
       </div>
-    </div>
+    </>
   );
 }
