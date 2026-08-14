@@ -91,9 +91,10 @@ export type LayoutMode = 'gallery' | 'speaker';
 export interface WhiteboardPoint {
   x: number;
   y: number;
-  prevX: number | null;
-  prevY: number | null;
+  prevX?: number | null;
+  prevY?: number | null;
   color: string;
   size: number;
-  tool: 'pen' | 'eraser' | 'highlighter';
+  tool?: 'pen' | 'eraser' | 'highlighter';
+  isDragging?: boolean;
 }
